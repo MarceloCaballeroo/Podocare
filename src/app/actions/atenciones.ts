@@ -36,7 +36,6 @@ export async function guardarAtencion(formData: FormData) {
       usuario_id: user.id,
       diagnostico_cie10: diagnosticoCie10,
       nivel_riesgo_iwgdf: evaluacion.nivelRiesgo,
-      requiere_derivacion: evaluacion.requiereDerivacion,
       observaciones: formData.get('observaciones') as string,
     })
     .select()
