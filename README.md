@@ -1,6 +1,6 @@
 # PodoCare — Sistema de Gestión Clínica para Consultas de Podología
 
-![CI](https://github.com/MarceloCaballeroo/CAPSTONE/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/MarceloCaballeroo/Podocare/actions/workflows/ci.yml/badge.svg)
 
 **PodoCare** es una plataforma web de gestión clínica diseñada específicamente para consultas de podología independiente en Chile. Su propósito es digitalizar la ficha clínica del paciente, automatizar el agendamiento de citas, dar seguimiento a las atenciones usando estándares clínicos (CIE-10 e IWGDF) y garantizar la trazabilidad y protección de datos sensibles en cumplimiento con la Ley N.° 19.628 de Protección de la Vida Privada.
 
@@ -413,8 +413,8 @@ La aplicación calcula con estas frecuencias el próximo control de cada pacient
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/MarceloCaballeroo/CAPSTONE.git
-   cd CAPSTONE
+   git clone https://github.com/MarceloCaballeroo/Podocare.git
+   cd Podocare
    ```
 
 2. **Configurar las variables de entorno.** Copia `.env.example` como `.env` en la raíz del proyecto:
