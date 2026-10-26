@@ -17,6 +17,14 @@ const etiquetasRiesgo: Record<string, string> = {
   alto: "Alto",
 };
 
+const etiquetaAntecedente: Record<string, string> = {
+  alergia: "Alergia",
+  enfermedad_base: "Enfermedad base",
+  medicamento: "Medicamento",
+  cirugia: "Cirugía",
+  otro: "Otro",
+};
+
 function fechaClinica(fecha: string | null | undefined, incluirHora = false): string {
   if (!fecha) return "Sin registro";
   return new Intl.DateTimeFormat("es-CL", {
@@ -59,14 +67,16 @@ export default async function PacientePage({ params }: { params: Promise<{ id: s
 
   const { data: contactoEmergencia } = await supabase.from("contacto_emergencia").select("nombre, telefono, parentesco").eq("paciente_id", id).order("id").limit(1).maybeSingle();
 
-  const { data: ficha } = await supabase.from("ficha_clinica").select("id, antecedentes, updated_at").eq("paciente_id", id).maybeSingle();
-  const { data: atenciones } = ficha ? await supabase.from("atencion").select("id, usuario_id, diagnostico_cie10, nivel_riesgo_iwgdf, requiere_derivacion, observaciones, created_at").eq("ficha_id", ficha.id).order("created_at", { ascending: false }) : { data: [] };
+  const { data: ficha } = await supabase.from("ficha_clinica").select("id, updated_at").eq("paciente_id", id).maybeSingle();
+  const { data: antecedentes } = ficha ? await supabase.from("ficha_antecedente").select("tipo, descripcion").eq("ficha_id", ficha.id).order("created_at") : { data: [] };
+  const textoAntecedentes = (antecedentes ?? []).map((item) => `${etiquetaAntecedente[item.tipo] ?? item.tipo}: ${item.descripcion}`).join("\n") || "No hay antecedentes registrados.";
+  const { data: atenciones } = ficha ? await supabase.from("atencion").select("id, usuario_id, diagnostico_cie10, nivel_riesgo_iwgdf, observaciones, created_at").eq("ficha_id", ficha.id).order("created_at", { ascending: false }) : { data: [] };
   const atencionIds = atenciones?.map((atencion) => atencion.id) ?? [];
   const { data: hallazgos, error: errorHallazgos } = atencionIds.length
     ? await supabase.from("hallazgo_clinico").select("id, atencion_id, corrige_hallazgo_id, lado_pie, coordenada_x, coordenada_y, coordenada_z, normal_x, normal_y, normal_z, modelo_version, afeccion, intensidad_dolor, created_at").in("atencion_id", atencionIds).order("created_at", { ascending: true })
     : { data: [], error: null };
   const { data: imagenes } = atencionIds.length ? await supabase.from("imagen_clinica").select("id, etiqueta, area_cm2, created_at").in("atencion_id", atencionIds).order("created_at", { ascending: false }) : { data: [] };
-  const { data: derivaciones } = atencionIds.length ? await supabase.from("derivacion").select("id, motivo, especialidad_destino, estado, created_at, updated_at").in("atencion_id", atencionIds).order("created_at", { ascending: false }) : { data: [] };
+  const { data: derivaciones } = atencionIds.length ? await supabase.from("derivacion").select("id, atencion_id, motivo, especialidad_destino, estado, created_at, updated_at").in("atencion_id", atencionIds).order("created_at", { ascending: false }) : { data: [] };
   const usuarioIds = [...new Set((atenciones ?? []).map((atencion) => atencion.usuario_id).filter((usuarioId): usuarioId is string => Boolean(usuarioId)))];
   const { data: profesionales } = usuarioIds.length
     ? await supabase.from("usuario").select("id, nombre").in("id", usuarioIds)
@@ -75,6 +85,8 @@ export default async function PacientePage({ params }: { params: Promise<{ id: s
   const atencionesLineaTiempo = (atenciones ?? []).map((atencion) => ({
     ...atencion,
     profesional: atencion.usuario_id ? profesionalPorId.get(atencion.usuario_id) ?? null : null,
+    // `atencion` no guarda la bandera: la derivación es la fuente de verdad.
+    requiere_derivacion: (derivaciones ?? []).some((derivacion) => derivacion.atencion_id === atencion.id),
   })) as AtencionLineaTiempo[];
   const atencionReciente = atenciones?.[0];
   const riesgo = atencionReciente?.nivel_riesgo_iwgdf;
@@ -92,6 +104,7 @@ export default async function PacientePage({ params }: { params: Promise<{ id: s
         <Link className="w-fit text-sm font-medium text-teal-800 hover:underline" href="/patients">← Volver a pacientes</Link>
         <div className="flex gap-2">
           <PrintFichaButton />
+          <Link href={`/patients/${id}/atencion/nueva`}><Button>Registrar atención</Button></Link>
           <Link href={`/patients/${id}/editar`}><Button variant="secondary">Editar datos</Button></Link>
         </div>
       </div>
@@ -152,7 +165,7 @@ export default async function PacientePage({ params }: { params: Promise<{ id: s
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-semibold text-slate-900">Antecedentes clínicos</h2>
             </div>
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-600">{ficha?.antecedentes || "No hay antecedentes registrados."}</p>
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-600">{textoAntecedentes}</p>
             {ficha?.updated_at && <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">Actualizado el {fechaClinica(ficha.updated_at)}</p>}
           </Card>
 

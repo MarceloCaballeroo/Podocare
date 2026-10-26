@@ -87,7 +87,6 @@
 |------|------|-------------|
 | `id` | `uuid` | Primary |
 | `paciente_id` | `uuid` |  Unique |
-| `antecedentes` | `text` |  Nullable |
 | `created_at` | `timestamptz` |  |
 | `updated_at` | `timestamptz` |  |
 
@@ -102,7 +101,6 @@
 | `usuario_id` | `uuid` |  Nullable |
 | `diagnostico_cie10` | `text` |  |
 | `nivel_riesgo_iwgdf` | `nivel_riesgo_iwgdf` |  |
-| `requiere_derivacion` | `bool` |  |
 | `observaciones` | `text` |  Nullable |
 | `created_at` | `timestamptz` |  |
 
@@ -328,7 +326,7 @@ Sin política INSERT/UPDATE/DELETE y sin privilegios de escritura para `anon`/`a
 | RUT válido | `paciente.rut_numero` + `paciente.rut_dv` con `CHECK paciente_rut_valido_check (validar_rut_chileno(rut_numero, rut_dv))` (módulo 11). El RUT se guarda descompuesto, no como texto formateado. |
 | RUT sin duplicados | Índice único `paciente_org_rut_key` sobre `(organizacion_id, rut_numero, upper(rut_dv::text))`. La app traduce el error de duplicado (`traducirErrorPaciente`) a "Ya existe un paciente con ese RUT". |
 | Diagnóstico CIE-10 (3FN) | `atencion.diagnostico_cie10` es FK a `catalogo_cie10(codigo)`; el nombre solo vive en el catálogo. Carga inicial de 17 códigos podológicos; ampliable por carga masiva. |
-| Antecedentes (1FN) | `ficha_antecedente` (una fila por alergia, enfermedad base, medicamento o cirugía). `ficha_clinica.antecedentes` queda como nota general. |
+| Antecedentes (1FN) | `ficha_antecedente` (una fila por alergia, enfermedad base, medicamento o cirugía). `ficha_clinica` **no** tiene columna `antecedentes`: la ficha se lee desde esa tabla. |
 | Atención ↔ cita | `atencion.cita_id` (único, opcional). |
 | Sin doble reserva | `cita.duracion_min` + `cita.fecha_hora_fin` (calculada por trigger) y restricción de exclusión `cita_sin_solape` por profesional, ignorando citas canceladas o no asistidas. Error `23P01` en la app. |
 | Retención clínica | FK `ON DELETE RESTRICT` entre paciente, ficha, atención, derivación e imagen; baja lógica con `paciente.activo`. |
@@ -336,7 +334,7 @@ Sin política INSERT/UPDATE/DELETE y sin privilegios de escritura para `anon`/`a
 | Auditoría | Triggers en `paciente`, `ficha_clinica`, `atencion`, `derivacion`, `cita`, `imagen_clinica` y `hallazgo_clinico`. Guarda solo los campos modificados y, de los sensibles, únicamente los *nombres*: `rut_numero`, `rut_dv`, `comuna_id`, nombre, apellidos, fecha de nacimiento, teléfono, email, dirección y los textos libres. `contacto_emergencia` no tiene trigger de auditoría. |
 
 
-Pendiente de diseño: `atencion.requiere_derivacion` es derivable de `derivacion` y de las reglas IWGDF (riesgo de desincronización); `rol`, `lado_pie` y `afeccion` usan `text` con CHECK en lugar de enums.
+Pendiente de diseño: `atencion` no guarda `requiere_derivacion` (se deriva de las filas de `derivacion`); `rol`, `lado_pie` y `afeccion` usan `text` con CHECK en lugar de enums.
 
 ## Functions
 
