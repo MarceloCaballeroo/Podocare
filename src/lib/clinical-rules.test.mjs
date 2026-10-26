@@ -29,3 +29,14 @@ test("las alertas de una evaluación bloqueante se recuperan desde el motivo de 
   assert.deepEqual(alertasBloqueantes(""), []);
   assert.deepEqual(alertasBloqueantes("Derivación manual"), []);
 });
+
+test("un formulario sin marcar cae en el caso conservador y deriva", () => {
+  // Las dos casillas positivas (monofilamento, pulsos) sin marcar se leen como PSP + EAP.
+  const vacio = {
+    monofilamentoSensible: false, pulsosPresentes: false, deformidadPresente: false,
+    ulceraPreviaOAmputacion: false, signosInfeccion: false, dolorIsquemico: false,
+  };
+  const resultado = evaluarRiesgoYDerivacion(vacio);
+  assert.equal(resultado.nivelRiesgo, "moderado");
+  assert.equal(resultado.requiereDerivacion, true);
+});
