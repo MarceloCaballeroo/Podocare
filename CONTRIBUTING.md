@@ -42,15 +42,22 @@ Formato: [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/).
 
 Mientras el proyecto esté en `0.x` la API no se considera estable, pero la regla se respeta igual.
 
-El bump se hace **en `main`, al mergear**, nunca en la rama de trabajo:
+El bump va en una **rama propia que se mergea por PR**, nunca directo en `main` (la protección de rama rechaza el push con `GH006`) ni en la rama de la funcionalidad:
 
 ```bash
 git switch main && git pull
+git switch -c chore/release-0.2.0
 npm version minor -m "chore(release): %s"
-git push --follow-tags
+git push -u origin chore/release-0.2.0
 ```
 
-`npm version` actualiza `package.json`, crea el commit `chore(release): 0.2.0` y el tag `v0.2.0`.
+`npm version` actualiza `package.json` y crea el commit `chore(release): 0.2.0`. El tag se crea **después del merge**, sobre `main`:
+
+```bash
+git switch main && git pull
+git tag -a v0.2.0 -m "chore(release): 0.2.0"
+git push origin v0.2.0
+```
 
 ## Ejemplos
 
