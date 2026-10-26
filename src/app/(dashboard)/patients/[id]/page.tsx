@@ -104,6 +104,7 @@ export default async function PacientePage({ params }: { params: Promise<{ id: s
         <Link className="w-fit text-sm font-medium text-teal-800 hover:underline" href="/patients">← Volver a pacientes</Link>
         <div className="flex gap-2">
           <PrintFichaButton />
+          <Link href={`/patients/${id}/atencion/nueva`}><Button>Registrar atención</Button></Link>
           <Link href={`/patients/${id}/editar`}><Button variant="secondary">Editar datos</Button></Link>
         </div>
       </div>
